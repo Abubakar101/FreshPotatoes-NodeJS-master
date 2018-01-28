@@ -19,7 +19,7 @@ Promise.resolve()
     if (NODE_ENV === "development") console.error(err.stack);
   });
 
-// Connected to DB
+// Connect to DB
 let db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READONLY, err => {
   if (err) {
     console.error(err.message);
@@ -34,10 +34,26 @@ app.get("/films/:id/recommendations", getFilmRecommendations);
 function getFilmRecommendations(req, res) {
   // res.status(500).send('Not Implemented');
 
-  // Query to DB
+  let limit = 10,
+    offset = 1;
+
+  if (req.query.limit) {
+    limit = parseInt(req.query.limit);
+  } else if (req.query.offset) {
+    offset = parseInt(req.query.offset);
+  }
+
+  // debugger;
+
   let recommendations = [];
   let id = req.params.id;
-  let add = 15;
+
+  // Invalid Or Undefined IDs
+  if (isNaN(id) || id === undefined) {
+    return res.status(422).json({ message: "key missing" });
+  }
+
+  // Query to DB
   db.serialize(() => {
     db.all(
       `Select * from films 
@@ -50,15 +66,22 @@ function getFilmRecommendations(req, res) {
           console.error(err.message);
         }
         recommendations = row;
-        res.json({recommendations});
+
+        // No DB Response
+        if (!recommendations.length > 0) {
+          return res.json({
+            message: `Couldn't find recommended films with => ${id} Id!`
+          });
+        }
+        res.json({
+          recommendations: recommendations.slice(offset, limit),
+          meta: { limit, offset }
+        });
 
         // console.log(recommendations);
       }
     );
-
-
   });
-
 }
 
 module.exports = app;
