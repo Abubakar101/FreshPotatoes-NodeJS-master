@@ -73,7 +73,8 @@ function getFilmRecommendations(req, res) {
 
   // FETCHING RATING & REVIEWS API
   function filmAPI(DBData) {
-    console.log("working map");
+    let requestedAPI = 0;
+    // console.log("working map");
     DBData.map(film => {
       let reviewAPI = {
         url: `http://credentials-api.generalassemb.ly/4576f55f-c427-4cfc-a11c-5bfe914ca6c1?films=${
@@ -87,9 +88,11 @@ function getFilmRecommendations(req, res) {
 
       // return new Promise(function(resolve, reject) {
       request(reviewAPI, function(err, res, body) {
-        if (err) {
-          throw err;
-        }
+        requestedAPI++;
+        // console.log(requestedAPI)
+        // if (err) {
+        //   throw err;
+        // }
 
         // A minimum of 5 reviews
         revLength = body[0].reviews.length;
@@ -112,13 +115,18 @@ function getFilmRecommendations(req, res) {
             }
           }
         }
+        if (DBData.length === requestedAPI) {
+          // console.log(DBData.length)
+          // console.log(requestedAPI)
+          JSONformat(recommendations);
+        }
       });
       // });
     });
 
     // Promise.resolve(filmAPIMapFunc).then(function(value) {
     // debugger
-    JSONformat(recommendations);
+    // JSONformat(recommendations);
     // });
   }
 
@@ -129,7 +137,7 @@ function getFilmRecommendations(req, res) {
       recommendations: APIData,
       meta: { limit, offset }
     };
-    console.log(obj);
+    // console.log(obj);
     res.json(obj);
     // res.end()
   }
