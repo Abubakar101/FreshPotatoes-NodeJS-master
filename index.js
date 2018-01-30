@@ -28,7 +28,7 @@ let db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READONLY, err => {
 });
 
 // ROUTES
-app.get("/films/:id/recommendations", getFilmRecommendations);
+app.use("/films/:id/recommendations", getFilmRecommendations);
 
 // ROUTE HANDLER
 function getFilmRecommendations(req, res) {
@@ -101,16 +101,22 @@ function getFilmRecommendations(req, res) {
           body[0].reviews.forEach(rate => {
             avgRating += rate.rating;
           });
-          avgRating = avgRating / revLength;
+          avgRating = (avgRating / revLength).toFixed(2);
           if (avgRating >= 4) {
             // Search min 5 reviews & >= 4.0 rating films in recommendations array
             if (body[0].film_id === film.id) {
-              rateRev = {
+              film = {
+                id: film.id,
+                title: film.title,
+                releaseDate: film.releaseDate,
+                genre: film.genre,
                 averageRating: avgRating,
                 reviews: revLength
               };
-              film = Object.assign(rateRev, film);
+
+
               recommendations.push(film);
+              // console.log(recommendations);
               // resolve(recommendations);
             }
           }
@@ -134,7 +140,7 @@ function getFilmRecommendations(req, res) {
   function JSONformat(APIData) {
     // console.log("checking => ", APIData);
     let obj = {
-      recommendations: APIData,
+      recommendations: APIData.splice(offset, limit),
       meta: { limit, offset }
     };
     // console.log(obj);
