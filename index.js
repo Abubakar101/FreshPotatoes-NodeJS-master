@@ -29,13 +29,12 @@ let db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READONLY, err => {
 
 // ROUTES
 app.use("/films/:id/recommendations", getFilmRecommendations);
-
 // ROUTE HANDLER
-function getFilmRecommendations(req, res) {
+function getFilmRecommendations(req, res, next) {
   // res.status(500).send('Not Implemented');
 
-  let limit = parseInt(req.query.limit) || 10,
-    offset = parseInt(req.query.offset) || 0;
+  let limit = 10,
+    offset = 0;
 
   let recommendations = [];
   let id = req.params.id;
@@ -44,6 +43,15 @@ function getFilmRecommendations(req, res) {
   // INVALID OR UNDEFINED IDS
   if (isNaN(id) || id === undefined) {
     return res.status(422).json({ message: "key missing" });
+  }
+  // INVALID QUERY PARMS
+  if (isNaN(parseInt(req.query.offset)) && isNaN(parseInt(req.query.limit))) {
+    if (
+      !req.originalUrl.endsWith("recommendations") &&
+      !req.originalUrl.endsWith("recommendations/")
+    ) {
+      return res.status(422).json({ message: "key missing" });
+    }
   }
 
   // QUERY TO DB
@@ -60,12 +68,12 @@ function getFilmRecommendations(req, res) {
           console.error(err.message);
         }
         DBFetchData = row;
+
         // No DB Response
         if (!DBFetchData.length > 0) {
-          return res.json({
-            message: `Couldn't find recommended films with => ${id} Id!`
-          });
+          return res.json({ message: `No Films with '${id}' ID` });
         }
+
         filmAPI(DBFetchData);
       }
     );
@@ -74,7 +82,6 @@ function getFilmRecommendations(req, res) {
   // FETCHING RATING & REVIEWS API
   function filmAPI(DBData) {
     let requestedAPI = 0;
-    // console.log("working map");
     DBData.map(film => {
       let reviewAPI = {
         url: `http://credentials-api.generalassemb.ly/4576f55f-c427-4cfc-a11c-5bfe914ca6c1?films=${
@@ -89,10 +96,6 @@ function getFilmRecommendations(req, res) {
       // return new Promise(function(resolve, reject) {
       request(reviewAPI, function(err, res, body) {
         requestedAPI++;
-        // console.log(requestedAPI)
-        // if (err) {
-        //   throw err;
-        // }
 
         // A minimum of 5 reviews
         revLength = body[0].reviews.length;
@@ -113,40 +116,31 @@ function getFilmRecommendations(req, res) {
                 averageRating: avgRating,
                 reviews: revLength
               };
-
-
               recommendations.push(film);
-              // console.log(recommendations);
-              // resolve(recommendations);
             }
           }
         }
+        // At the end of loop, render the films in JSON format
         if (DBData.length === requestedAPI) {
-          // console.log(DBData.length)
-          // console.log(requestedAPI)
           JSONformat(recommendations);
         }
       });
-      // });
     });
-
-    // Promise.resolve(filmAPIMapFunc).then(function(value) {
-    // debugger
-    // JSONformat(recommendations);
-    // });
   }
 
   // RENDER AS JSON FORMAT
   function JSONformat(APIData) {
-    // console.log("checking => ", APIData);
     let obj = {
       recommendations: APIData.splice(offset, limit),
       meta: { limit, offset }
     };
-    // console.log(obj);
     res.json(obj);
-    // res.end()
   }
 }
+
+app.use(function(req, res, next) {
+  res.status(404).json({ message: "key missing" });
+  console.log(res.statusCode);
+});
 
 module.exports = app;
