@@ -4,7 +4,7 @@
   "description": "Your freshest place for film-related data",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --ignore spec/ index.js",
+    "start": "nodemon --inspect --ignore spec/ index.js",
     "test": "NODE_ENV=test PORT=3333 mocha --recursive --reporter spec"
   },
   "author": "GA Credentials",
@@ -19,7 +19,8 @@
     "express": "^4.14.0",
     "request": "^2.79.0",
     "sequelize": "^3.29.0",
-    "sqlite": "^2.2.3"
+    "sqlite": "^2.2.3",
+    "sqlite3": "^3.1.13"
   },
   "engines": {
     "node": ">= 6.8.1"
